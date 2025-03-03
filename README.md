@@ -124,14 +124,17 @@ VALUES
 ('2025-03-02 12:00:00', 1, 7),
 ('2025-03-02 12:00:00', 1, 8),
 ('2025-03-02 12:00:00', 2, 9),
-('2025-03-02 12:00:00', 3, 2);
+('2025-03-02 12:00:00', 3, 2),
+('2025-03-02 12:00:00', 1, 6),
+('2025-03-02 12:00:00', 1, 5),
+('2025-03-02 12:00:00', 4, 1);
 
-INSERT INTO esport.matches(tournament_id, player1_id, player2_id, match_date)
+INSERT INTO esport.matches(tournament_id, player1_id, player2_id, match_date, winner_id)
 VALUES
-(7, 1, 2, '2024-11-06 14:00:00'),
-(1, 1, 7, '2025-03-10 12:00:00'),
-(1, 1, 8, '2025-03-10 13:00:00'),
-(1, 7, 8, '2025-03-10 14:00:00');
+(7, 1, 2, '2024-11-06 14:00:00', 1),
+(1, 1, 7, '2025-03-10 13:00:00', null),
+(1, 1, 8, '2025-03-10 12:00:00', null),
+(1, 7, 8, '2025-03-10 14:00:00', null);
 ```
 
 Task 2: SQL-Forespørgsler
@@ -186,7 +189,7 @@ or player2_id = 1;
 ```
 Resultat:
 
-![img.png](task2/2.5_result.png)![img.png](task2/2.5_result.png)
+![img.png](task2/2.5_result.png)
 
 2.6 Hent en spillers tilmeldte turneringer.
 ```sql
@@ -201,46 +204,87 @@ Resultat:
 
 2.7 Find de 5 bedst rangerede spillere.
 ```sql
-
+select username, ranking from players order by ranking DESC limit 5;
 ```
+Resultat:
+
+![img.png](task2/2.7_result.png)
 
 2.8 Beregn gennemsnitlig ranking for alle spillere.
 ```sql
-
+select avg(ranking) from players;
 ```
+Resultat:
+
+![img.png](task2/2.8_result.png)
 
 2.9 Vis turneringer med mindst 5 deltagere.
 ```sql
-
+SELECT t.tournament_id, t.name, t.game, COUNT(tr.player_id) AS num_players
+FROM tournaments t
+JOIN tournament_registrations tr ON t.tournament_id = tr.tournament_id
+GROUP BY t.tournament_id
+HAVING num_players >= 5;
 ```
+Resultat:
+
+![img.png](task2/2.9_result.png)
 
 2.10 Find det samlede antal spillere i systemet.
 ```sql
-
+select count(*) from players;
 ```
+Resultat:
+
+![img.png](task2/2.10_result.png)
 
 2.11 Find alle kampe, der mangler en vinder.
 ```sql
-
+select * from matches where winner_id IS NULL;
 ```
+Resultat:
+
+![img.png](task2/2.11_result.png)
 
 2.12 Vis de mest populære spil baseret på turneringsantal.
 ```sql
-
+select game, count(tournament_id) as numOfTourneys 
+from tournaments 
+group by game 
+order by numOfTourneys DESC;
 ```
+Resultat:
+
+![img.png](task2/2.12_result.png)
 
 2.13 Find de 5 nyeste oprettede turneringer.
 ```sql
-
+select * from tournaments 
+order by created_at limit 5;
 ```
+Resultat:
+
+![img.png](task2/2.13_result.png)
 
 2.14 Find spillere, der har registreret sig i flere end 3 turneringer.
 ```sql
-
+select p.player_id, p.username, COUNT(tr.tournament_id) as registrations
+from tournament_registrations as tr
+join players p on tr.player_id = p.player_id
+group by p.player_id
+having registrations > 3;
 ```
+Resultat:
+
+![img.png](task2/2.14_result.png)
 
 2.15 Hent alle kampe i en turnering sorteret efter dato.
 ```sql
-
+select * from matches 
+where tournament_id = 1 
+order by match_date;
 ```
+Resultat:
+
+![img.png](task2/2.15_result.png)
 
