@@ -138,36 +138,66 @@ Task 2: SQL-Forespørgsler
 
 2.1 Hent alle turneringer, der starter inden for de næste 30 dage.
 ```sql
-select * from tournaments WHERE start_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY);
+select * from tournaments 
+WHERE start_date BETWEEN CURDATE() 
+AND DATE_ADD(CURDATE(), INTERVAL 30 DAY);
 ```
 Resultat:
+
 ![img.png](task2/2.1_result.png)
 
 2.2 Find det antal turneringer, en spiller har deltaget i.
 ```sql
-select count(*) from tournament_registrations where player_id = 1;
+select count(*) from tournament_registrations 
+where player_id = 1;
 ```
 Resultat:
+
 ![img.png](task2/2.2_result.png)
+
 2.3 Vis en liste over spillere registreret i en bestemt turnering.
 ```sql
-
+SELECT p.player_id, p.username from players p 
+JOIN tournament_registrations tr on p.player_id = tr.player_id 
+where tr.tournament_id = 1;
 ```
+Resultat:
+
+![img.png](task2/2.3_result.png)
 
 2.4 Find spillere med flest sejre i en bestemt turnering.
 ```sql
-
+select player_id, username, sum(case when players.player_id = matches.winner_id then 1 else 0 end) as w 
+from players
+left join matches 
+on players.player_id = matches.player1_id or players.player_id = matches.player2_id
+where matches.tournament_id = 7
+group by players.player_id order by w DESC;
 ```
+Resultat:
+
+![img.png](task2/2.4_result.png)
 
 2.5 Hent alle kampe, hvor en bestemt spiller har deltaget.
 ```sql
-
+select * from matches 
+where player1_id = 1 
+or player2_id = 1;
 ```
+Resultat:
+
+![img.png](task2/2.5_result.png)![img.png](task2/2.5_result.png)
 
 2.6 Hent en spillers tilmeldte turneringer.
 ```sql
-
+Select t.tournament_id, t.name from tournaments as t
+JOIN tournament_registrations as tr
+ON t.tournament_id = tr.tournament_id
+where tr.player_id = 1;
 ```
+Resultat:
+
+![2.6_result.png](task2%2F2.6_result.png)
 
 2.7 Find de 5 bedst rangerede spillere.
 ```sql
