@@ -1,20 +1,20 @@
 -- 2.1 Hent alle turneringer, der starter inden for de næste 30 dage.
 select * from tournaments WHERE start_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY);
 -- 2.2 Find det antal turneringer, en spiller har deltaget i.
-select count(*) from tournament_registrations where player_id = "lars";
+select count(*) from tournament_registrations where player_id = 1;
 -- 2.3 Vis en liste over spillere registreret i en bestemt turnering.
-SELECT p.player_id, p.username from players p JOIN tournament_registrations tr on p.player_id = tr.player_id where tr.tournament_id = "Free Fire";
+SELECT p.player_id, p.username from players p JOIN tournament_registrations tr on p.player_id = tr.player_id where tr.tournament_id = 1;
 -- 2.4 Find spillere med flest sejre i en bestemt turnering.
 select player_id, username, count(matches.winner_id) as w from players
 join matches on players.player_id = matches.winner_id
-where matches.tournament_id = "Free Fire"
+where matches.tournament_id = 7
 group by players.player_id order by w;
 -- 2.5 Hent alle kampe, hvor en bestemt spiller har deltaget.
-select * from matches where player1_id = "Lars" or player2_id = "Lars";
+select * from matches where player1_id = 1 or player2_id = 1;
 -- 2.6 Hent en spillers tilmeldte turneringer.
-Select * from tournament_registrations where player_id = "Lars";
+Select * from tournament_registrations where player_id = 1;
 -- 2.7 Find de 5 bedst rangerede spillere.
-select username, ranking from players order by ranking limit 5;
+select username, ranking from players order by ranking DESC limit 5;
 -- 2.8 Beregn gennemsnitlig ranking for alle spillere.
 select avg(ranking) from players;
 -- 2.9 Vis turneringer med mindst 5 deltagere.
@@ -29,7 +29,7 @@ select count(*) from players;
 select * from matches where winner_id IS NULL;
 -- 2.12 Vis de mest populære spil baseret på turneringsantal.
 select game, count(tournament_id) as numOfTourneys from tournaments 
-group by game order by numOfTourneys;
+group by game order by numOfTourneys DESC;
 -- 2.13 Find de 5 nyeste oprettede turneringer.
 select * from tournaments order by created_at limit 5;
 -- 2.14 Find spillere, der har registreret sig i flere end 3 turneringer.
