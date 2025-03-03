@@ -1,31 +1,32 @@
-CREATE DATABASE  IF NOT EXISTS `esport` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+CREATE DATABASE  IF NOT EXISTS `esport`;
 USE `esport`;
--- MySQL dump 10.13  Distrib 8.0.31, for Win64 (x86_64)
---
--- Host: 207.154.236.26    Database: esport
--- ------------------------------------------------------
--- Server version	8.0.41
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+DROP TABLE IF EXISTS `players`;
+CREATE TABLE `players` (
+  `player_id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(45) NOT NULL,
+  `email` varchar(45) NOT NULL,
+  `ranking` int DEFAULT '0',
+  `created_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`player_id`),
+  UNIQUE KEY `username_UNIQUE` (`username`),
+  UNIQUE KEY `email_UNIQUE` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Table structure for table `matches`
---
+DROP TABLE IF EXISTS `tournaments`;
+CREATE TABLE `tournaments` (
+  `tournament_id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(45) NOT NULL,
+  `game` varchar(45) NOT NULL,
+  `max_players` int NOT NULL,
+  `start_date` datetime NOT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`tournament_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `matches`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `matches` (
-  `match_id` int NOT NULL,
+  `match_id` int NOT NULL AUTO_INCREMENT,
   `tournament_id` int NOT NULL,
   `player1_id` int NOT NULL,
   `player2_id` int NOT NULL,
@@ -40,37 +41,12 @@ CREATE TABLE `matches` (
   CONSTRAINT `player1_id` FOREIGN KEY (`player1_id`) REFERENCES `players` (`player_id`),
   CONSTRAINT `player2_id` FOREIGN KEY (`player2_id`) REFERENCES `players` (`player_id`),
   CONSTRAINT `winnder_id` FOREIGN KEY (`winner_id`) REFERENCES `players` (`player_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci AUTO_INCREMENT=1;
 
---
--- Table structure for table `players`
---
-
-DROP TABLE IF EXISTS `players`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `players` (
-  `player_id` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(45) NOT NULL,
-  `email` varchar(45) NOT NULL,
-  `ranking` int(10) unsigned zerofill DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`player_id`),
-  UNIQUE KEY `username_UNIQUE` (`username`),
-  UNIQUE KEY `email_UNIQUE` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `tournament_registrations`
---
 
 DROP TABLE IF EXISTS `tournament_registrations`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `tournament_registrations` (
-  `registration_id` int NOT NULL,
+  `registration_id` int NOT NULL AUTO_INCREMENT,
   `registered_at` datetime NOT NULL,
   `tournament_id` int NOT NULL,
   `player_id` int NOT NULL,
@@ -79,34 +55,76 @@ CREATE TABLE `tournament_registrations` (
   KEY `player_id_idx` (`player_id`),
   CONSTRAINT `player_id` FOREIGN KEY (`player_id`) REFERENCES `players` (`player_id`),
   CONSTRAINT `tournament_id` FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`tournament_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci AUTO_INCREMENT=1;
 
---
--- Table structure for table `tournaments`
---
+DELIMITER $$
 
-DROP TABLE IF EXISTS `tournaments`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `tournaments` (
-  `tournament_id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(45) NOT NULL,
-  `game` varchar(45) NOT NULL,
-  `max_players` int NOT NULL,
-  `start_date` datetime NOT NULL,
-  `created_at` datetime NOT NULL,
-  PRIMARY KEY (`tournament_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+CREATE TRIGGER set_created_at
+BEFORE INSERT ON players
+FOR EACH ROW 
+BEGIN
+    IF NEW.created_at IS NULL THEN
+		SET NEW.created_at = NOW();
+	END IF;
+END $$
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+DELIMITER ; 
 
--- Dump completed on 2025-02-24 15:49:07
+DELIMITER $$
+
+CREATE TRIGGER set_created_at_tournaments
+BEFORE INSERT ON tournaments
+FOR EACH ROW 
+BEGIN
+    IF NEW.created_at IS NULL THEN
+		SET NEW.created_at = NOW();
+	END IF;
+END $$
+
+DELIMITER ; 
+
+INSERT INTO esport.players(username, email, ranking) 
+VALUES 
+('maverick', 'm@test.dk', 0), 
+('gobsmacked', 'g@test.dk', 100), 
+('flume', 'f@test.dk', 200), 
+('ranivorous', 'r@test.dk', 150), 
+('phalange', 'p@test.dk', 2000), 
+('sprout','s@test.dk', 175), 
+('bulbous', 'b@test.dk', 50),
+('drizzle', 'd@test.dk', 0),
+('wharf', 'w@test.dk', 80),
+('Jackster', 'j@test.dk', 1250);
+
+INSERT INTO esport.tournaments(name, game, max_players, start_date) 
+VALUES
+('Free Fire', 'CS', 100, '2025-03-10 12:00:00'),
+('COBX Masters', 'LOL', 325, '2025-06-20 20:00:00'),
+('PUBG Championships', 'PUBG', 120, '2025-04-15 08:00:00'),
+('Cybergamer', 'DOTA', 50,'2026-04-09 15:00:00'),
+('Evolution Championships','CS', 80,'2026-01-01 08:00:00'),
+('Hero Pro League', 'HON', 30, '2024-12-24 18:00:00'),
+('League Gaming', 'LOL', 50, '2024-11-06 14:00:00');
+
+INSERT esport.tournament_registrations(registered_at, tournament_id, player_id)
+VALUES
+('2024-11-05 14:00:00', 7, 1),
+('2024-11-04 14:00:00', 7, 2),
+('2025-03-02 12:00:00', 1, 1),
+('2025-03-02 12:00:00', 2, 1),
+('2025-03-02 12:00:00', 4, 7),
+('2025-03-02 12:00:00', 4, 10),
+('2025-03-02 12:00:00', 1, 7),
+('2025-03-02 12:00:00', 1, 8),
+('2025-03-02 12:00:00', 2, 9),
+('2025-03-02 12:00:00', 3, 2),
+('2025-03-02 12:00:00', 1, 6),
+('2025-03-02 12:00:00', 1, 5),
+('2025-03-02 12:00:00', 1, 4);
+
+INSERT INTO esport.matches(tournament_id, player1_id, player2_id, match_date, winner_id)
+VALUES
+(7, 1, 2, '2024-11-06 14:00:00', 1),
+(1, 1, 7, '2025-03-10 13:00:00', null),
+(1, 1, 8, '2025-03-10 12:00:00', null),
+(1, 7, 8, '2025-03-10 14:00:00', null);
