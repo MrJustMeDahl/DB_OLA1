@@ -1,9 +1,9 @@
 # DB_OLA1
 First OLA of Software development.
 
-TASK 1: Databasedesign og oprettelse af databasen
+## TASK 1: Databasedesign og oprettelse af databasen
 
-Script til oprettelse af database: 
+### Script til oprettelse af database: 
 ```sql
 CREATE DATABASE  IF NOT EXISTS `esport`;
 USE `esport`;
@@ -137,9 +137,9 @@ VALUES
 (1, 7, 8, '2025-03-10 14:00:00', null);
 ```
 
-Task 2: SQL-Forespørgsler
+## Task 2: SQL-Forespørgsler
 
-2.1 Hent alle turneringer, der starter inden for de næste 30 dage.
+### 2.1 Hent alle turneringer, der starter inden for de næste 30 dage.
 ```sql
 select * from tournaments 
 WHERE start_date BETWEEN CURDATE() 
@@ -149,7 +149,7 @@ Resultat:
 
 ![img.png](task2/2.1_result.png)
 
-2.2 Find det antal turneringer, en spiller har deltaget i.
+### 2.2 Find det antal turneringer, en spiller har deltaget i.
 ```sql
 select count(*) from tournament_registrations 
 where player_id = 1;
@@ -158,7 +158,7 @@ Resultat:
 
 ![img.png](task2/2.2_result.png)
 
-2.3 Vis en liste over spillere registreret i en bestemt turnering.
+### 2.3 Vis en liste over spillere registreret i en bestemt turnering.
 ```sql
 SELECT p.player_id, p.username from players p 
 JOIN tournament_registrations tr on p.player_id = tr.player_id 
@@ -168,7 +168,7 @@ Resultat:
 
 ![img.png](task2/2.3_result.png)
 
-2.4 Find spillere med flest sejre i en bestemt turnering.
+### 2.4 Find spillere med flest sejre i en bestemt turnering.
 ```sql
 select player_id, username, sum(case when players.player_id = matches.winner_id then 1 else 0 end) as w 
 from players
@@ -181,7 +181,7 @@ Resultat:
 
 ![img.png](task2/2.4_result.png)
 
-2.5 Hent alle kampe, hvor en bestemt spiller har deltaget.
+### 2.5 Hent alle kampe, hvor en bestemt spiller har deltaget.
 ```sql
 select * from matches 
 where player1_id = 1 
@@ -191,7 +191,7 @@ Resultat:
 
 ![img.png](task2/2.5_result.png)
 
-2.6 Hent en spillers tilmeldte turneringer.
+### 2.6 Hent en spillers tilmeldte turneringer.
 ```sql
 Select t.tournament_id, t.name from tournaments as t
 JOIN tournament_registrations as tr
@@ -202,7 +202,7 @@ Resultat:
 
 ![2.6_result.png](task2%2F2.6_result.png)
 
-2.7 Find de 5 bedst rangerede spillere.
+### 2.7 Find de 5 bedst rangerede spillere.
 ```sql
 select username, ranking from players order by ranking DESC limit 5;
 ```
@@ -210,7 +210,7 @@ Resultat:
 
 ![img.png](task2/2.7_result.png)
 
-2.8 Beregn gennemsnitlig ranking for alle spillere.
+### 2.8 Beregn gennemsnitlig ranking for alle spillere.
 ```sql
 select avg(ranking) from players;
 ```
@@ -218,7 +218,7 @@ Resultat:
 
 ![img.png](task2/2.8_result.png)
 
-2.9 Vis turneringer med mindst 5 deltagere.
+### 2.9 Vis turneringer med mindst 5 deltagere.
 ```sql
 SELECT t.tournament_id, t.name, t.game, COUNT(tr.player_id) AS num_players
 FROM tournaments t
@@ -230,7 +230,7 @@ Resultat:
 
 ![img.png](task2/2.9_result.png)
 
-2.10 Find det samlede antal spillere i systemet.
+### 2.10 Find det samlede antal spillere i systemet.
 ```sql
 select count(*) from players;
 ```
@@ -238,7 +238,7 @@ Resultat:
 
 ![img.png](task2/2.10_result.png)
 
-2.11 Find alle kampe, der mangler en vinder.
+### 2.11 Find alle kampe, der mangler en vinder.
 ```sql
 select * from matches where winner_id IS NULL;
 ```
@@ -246,7 +246,7 @@ Resultat:
 
 ![img.png](task2/2.11_result.png)
 
-2.12 Vis de mest populære spil baseret på turneringsantal.
+### 2.12 Vis de mest populære spil baseret på turneringsantal.
 ```sql
 select game, count(tournament_id) as numOfTourneys 
 from tournaments 
@@ -257,7 +257,7 @@ Resultat:
 
 ![img.png](task2/2.12_result.png)
 
-2.13 Find de 5 nyeste oprettede turneringer.
+### 2.13 Find de 5 nyeste oprettede turneringer.
 ```sql
 select * from tournaments 
 order by created_at limit 5;
@@ -266,7 +266,7 @@ Resultat:
 
 ![img.png](task2/2.13_result.png)
 
-2.14 Find spillere, der har registreret sig i flere end 3 turneringer.
+### 2.14 Find spillere, der har registreret sig i flere end 3 turneringer.
 ```sql
 select p.player_id, p.username, COUNT(tr.tournament_id) as registrations
 from tournament_registrations as tr
@@ -278,7 +278,7 @@ Resultat:
 
 ![img.png](task2/2.14_result.png)
 
-2.15 Hent alle kampe i en turnering sorteret efter dato.
+### 2.15 Hent alle kampe i en turnering sorteret efter dato.
 ```sql
 select * from matches 
 where tournament_id = 1 
