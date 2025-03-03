@@ -133,3 +133,84 @@ VALUES
 (1, 1, 8, '2025-03-10 13:00:00'),
 (1, 7, 8, '2025-03-10 14:00:00');
 ```
+
+Task 2: SQL-Forespørgsler
+
+2.1 Hent alle turneringer, der starter inden for de næste 30 dage.
+```sql
+select * from tournaments WHERE start_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY);
+```
+Resultat:
+![img.png](task2/2.1_result.png)
+
+2.2 Find det antal turneringer, en spiller har deltaget i.
+```sql
+select count(*) from tournament_registrations where player_id = 1;
+```
+Resultat:
+![img.png](task2/2.2_result.png)
+2.3 Vis en liste over spillere registreret i en bestemt turnering.
+```sql
+
+```
+
+2.4 Find spillere med flest sejre i en bestemt turnering.
+```sql
+
+```
+
+2.5 Hent alle kampe, hvor en bestemt spiller har deltaget.
+```sql
+
+```
+
+2.6 Hent en spillers tilmeldte turneringer.
+```sql
+
+```
+
+2.7 Find de 5 bedst rangerede spillere.
+```sql
+
+```
+
+2.8 Beregn gennemsnitlig ranking for alle spillere.
+```sql
+
+```
+
+2.9 Vis turneringer med mindst 5 deltagere.
+```sql
+
+```
+
+2.10 Find det samlede antal spillere i systemet.
+```sql
+
+```
+
+2.11 Find alle kampe, der mangler en vinder.
+```sql
+
+```
+
+2.12 Vis de mest populære spil baseret på turneringsantal.
+```sql
+
+```
+
+2.13 Find de 5 nyeste oprettede turneringer.
+```sql
+
+```
+
+2.14 Find spillere, der har registreret sig i flere end 3 turneringer.
+```sql
+
+```
+
+2.15 Hent alle kampe i en turnering sorteret efter dato.
+```sql
+
+```
+
