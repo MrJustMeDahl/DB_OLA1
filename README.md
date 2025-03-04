@@ -2,13 +2,16 @@
 
 First OLA of Software development.
 
-## TASK 1: Databasedesign og oprettelse af databasen
+## TASK 1: Databasedesign og oprettel
+se af databasen
 
 ### Script til oprettelse af database:
 
 ```sql
 CREATE DATABASE  IF NOT EXISTS `esport`;
 USE `esport`;
+
+-- tables
 
 DROP TABLE IF EXISTS `players`;
 CREATE TABLE `players` (
@@ -66,46 +69,204 @@ CREATE TABLE `tournament_registrations` (
   CONSTRAINT `tournament_id` FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`tournament_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci AUTO_INCREMENT=1;
 
+-- triggers:
+
 DELIMITER $$
 
 CREATE TRIGGER set_created_at
 BEFORE INSERT ON players
-FOR EACH ROW
+FOR EACH ROW 
 BEGIN
     IF NEW.created_at IS NULL THEN
 		SET NEW.created_at = NOW();
 	END IF;
 END $$
 
-DELIMITER ;
+DELIMITER ; 
 
 DELIMITER $$
 
 CREATE TRIGGER set_created_at_tournaments
 BEFORE INSERT ON tournaments
-FOR EACH ROW
+FOR EACH ROW 
 BEGIN
     IF NEW.created_at IS NULL THEN
 		SET NEW.created_at = NOW();
 	END IF;
 END $$
 
+DELIMITER ; 
+
+DELIMITER //
+create trigger beforeInsertRegistration
+before insert on tournament_registrations
+for each row
+begin
+	declare playerCount int;
+    declare maxPlayers int;
+
+    select count(*) into playerCount from tournament_registrations where tournament_id = NEW.tournament_id;
+    select max_players into maxPlayers from tournaments where tournament_id = NEW.tournament_id;
+
+    IF playerCount>= maxPlayers then
+		signal sqlstate '45000' set message_text = 'Tournament Full';
+
+    end if;
+
+end //
+
 DELIMITER ;
 
-INSERT INTO esport.players(username, email, ranking)
-VALUES
-('maverick', 'm@test.dk', 0),
-('gobsmacked', 'g@test.dk', 100),
-('flume', 'f@test.dk', 200),
-('ranivorous', 'r@test.dk', 150),
-('phalange', 'p@test.dk', 2000),
-('sprout','s@test.dk', 175),
+DELIMITER //
+create trigger afterInsertMatch
+after update on matches
+for each row
+begin
+    
+    DECLARE player1_ranking INT;
+    DECLARE player2_ranking INT;
+    
+    SELECT RANKING INTO player1_ranking FROM players WHERE player_id = new.player1_id;
+    SELECT RANKING INTO player2_ranking FROM players WHERE player_id = new.player2_id;
+    
+    if new.winner_id = new.player1_id then
+		update players set ranking = ranking + 10 where player_id = new.player1_id;
+        if player2_ranking >= 10 then
+			update players set ranking = ranking - 10 where player_id = new.player2_id;
+		else
+			update players set ranking = 0 where player_id = new.player2_id;
+		end if;
+	elseif new.winner_id = new.player2_id then
+		update players set ranking = ranking + 10 where player_id = new.player2_id;
+        if player1_ranking >= 10 then
+			update players set ranking = ranking - 10 where player_id = new.player1_id;
+		else
+			update players set ranking = 0 where player_id = new.player1_id;
+		end if;
+    end if;
+end //
+
+DELIMITER ;
+
+-- procedures
+
+DELIMITER //
+
+CREATE PROCEDURE joinTournament(
+    IN p_player_id INT,
+    IN p_tournament_id INT
+)
+BEGIN
+    IF EXISTS (
+		SELECT 1
+        FROM tournament_registrations
+        WHERE tournament_id = p_tournament_id
+        AND player_id = p_player_id
+    )THEN
+		signal sqlstate '45000' set message_text = 'Player has already registered to that tournament.';
+    ELSE
+        insert into tournament_registrations (player_id, tournament_id, registered_at)
+        values (p_player_id, p_tournament_id, NOW());
+    END IF;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE registerPlayer(
+    IN p_username VARCHAR(45),
+    IN p_email VARCHAR(45),
+    IN p_ranking INT(10)
+)
+BEGIN
+    INSERT INTO players (username, email, ranking, created_at)
+    VALUES (p_username, p_email, p_ranking, NOW());
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE submitMatchResult(
+    IN p_match_id INT,
+    IN p_winner_id INT
+)
+BEGIN
+    IF EXISTS(
+        SELECT 1
+        FROM matches
+        WHERE match_id = p_match_id
+        AND (player1_id = p_winner_id OR player2_id = p_winner_id)
+    ) THEN
+        UPDATE matches
+        SET winner_id = p_winner_id
+        WHERE match_id = p_match_id;
+    ELSE
+        signal sqlstate '45000' set message_text = 'Winner is not a participant of this match.';
+    END IF;
+
+END //
+
+DELIMITER ;
+
+-- functions:
+
+DELIMITER //
+create function getTotalWins(playerID int) returns int
+deterministic
+begin
+    declare totalWins int;
+
+    select COUNT(*) into totalWins
+    from matches
+    where winner_id = playerID;
+
+    return totalWins;
+end //
+DELIMITER ;
+
+DELIMITER //
+create function getTournamentStatus(tournamentID INT) RETURNS VARCHAR(20)
+DETERMINISTIC
+begin
+    declare tournamentStart date;
+    declare tournamentEnd date;
+    DECLARE status VARCHAR(20);
+
+    -- Get tournament start date
+    SELECT start_date INTO tournamentStart FROM tournaments WHERE tournament_id = tournamentID;
+
+    -- If no matches have been played, it's "upcoming"
+    IF tournamentStart > CURDATE() THEN
+        SET status = 'upcoming';
+    -- If there are matches but no winner for all matches, it's "ongoing"
+    ELSEIF EXISTS (SELECT 1 FROM matches WHERE tournament_id = tournamentID AND winner_id IS NULL) THEN
+        SET status = 'ongoing';
+    ELSE
+        SET status = 'completed';
+    END IF;
+
+    RETURN status;
+END //
+DELIMITER ;
+
+-- Test data:
+
+INSERT INTO esport.players(username, email, ranking) 
+VALUES 
+('maverick', 'm@test.dk', 0), 
+('gobsmacked', 'g@test.dk', 100), 
+('flume', 'f@test.dk', 200), 
+('ranivorous', 'r@test.dk', 150), 
+('phalange', 'p@test.dk', 2000), 
+('sprout','s@test.dk', 175), 
 ('bulbous', 'b@test.dk', 50),
 ('drizzle', 'd@test.dk', 0),
 ('wharf', 'w@test.dk', 80),
 ('Jackster', 'j@test.dk', 1250);
 
-INSERT INTO esport.tournaments(name, game, max_players, start_date)
+INSERT INTO esport.tournaments(name, game, max_players, start_date) 
 VALUES
 ('Free Fire', 'CS', 100, '2025-03-10 12:00:00'),
 ('COBX Masters', 'LOL', 325, '2025-06-20 20:00:00'),
@@ -138,6 +299,24 @@ VALUES
 (1, 1, 8, '2025-03-10 12:00:00', null),
 (1, 7, 8, '2025-03-10 14:00:00', null);
 ```
+
+### Sådan ser databasen ud efter creation scriptet er kørt: 
+
+Players:
+
+![img.png](creation/players_table.png)
+
+Tournaments:
+
+![img.png](creation/tournaments_table.png)
+
+Tournament_registrations:
+
+![img.png](creation/tournament_registrations_table.png)
+
+Matches:
+
+![img.png](creation/matches_table.png)
 
 ## Task 2: SQL-Forespørgsler
 
@@ -342,6 +521,18 @@ END //
 DELIMITER ;
 ```
 
+DB state før proceduren køres:
+
+![players_table.png](creation%2Fplayers_table.png)
+
+```sql
+CALL registerPlayer('Asher', 'a@test.dk', 0);
+```
+
+State efter proceduren er kørt:
+
+![img.png](task3_filer/3.1.1_playerRegistered.png)
+
 ##### 3.1.2 joinTournament
 
 ```
@@ -352,15 +543,14 @@ CREATE PROCEDURE joinTournament(
     IN p_tournament_id INT
 )
 BEGIN
-    DECLARE player_count INT;
-
-    -- Hent antallet af spillere, der allerede er registreret i turneringen
-    SELECT COUNT(*) INTO player_count
-    FROM tournament_registrations
-    WHERE tournament_id = p_tournament_id;
-
-    -- Hvis der er plads, tilmeld spilleren
-    IF player_count < (SELECT max_players FROM tournaments where tournament_id = p_tournament_id) THEN
+    IF EXISTS ( 
+		SELECT 1
+        FROM tournament_registrations
+        WHERE tournament_id = p_tournament_id
+        AND player_id = p_player_id
+    )THEN
+		signal sqlstate '45000' set message_text = 'Player has already registered to that tournament.';
+    ELSE
         insert into tournament_registrations (player_id, tournament_id, registered_at)
         values (p_player_id, p_tournament_id, NOW());
     END IF;
@@ -368,6 +558,24 @@ END //
 
 DELIMITER ;
 ```
+
+DB state før proceduren køres:
+
+![tournament_registrations_table.png](creation%2Ftournament_registrations_table.png)
+
+```sql
+CALL joinTournament(1, 1);
+```
+
+![img.png](task3_filer/3.1.2_invalid_registration.png)
+
+```sql
+CALL joinTournament(1, 3);
+```
+
+DB state efter proceduren er kørt:
+
+![img.png](task3_filer/3.1.2_valid_registration.png)
 
 ##### 3.1.3 submitMatchResult
 
@@ -379,35 +587,42 @@ CREATE PROCEDURE submitMatchResult(
     IN p_winner_id INT
 )
 BEGIN
-    DECLARE p_loser_id INT;
-
-    SELECT
-        CASE
-            WHEN player1_id = p_winner_id THEN player2_id
-            ELSE player1_id
-        END
-    INTO p_loser_id
-    FROM matches
-    WHERE match_id = p_match_id;
-
-    -- Vinderen får 10 ranking
-    UPDATE players
-    SET ranking = ranking + 10
-    WHERE player_id = p_winner_id;
-
-    -- Taberen mister 10 ranking
-    UPDATE players
-    SET ranking = ranking - 10
-    WHERE player_id = p_loser_id;
-
-    UPDATE matches
-    SET winner_id = p_winner_id
-    WHERE match_id = p_match_id;
+    IF EXISTS(
+        SELECT 1
+        FROM matches
+        WHERE match_id = p_match_id
+        AND (player1_id = p_winner_id OR player2_id = p_winner_id)
+    ) THEN
+        UPDATE matches
+        SET winner_id = p_winner_id
+        WHERE match_id = p_match_id;
+    ELSE
+        signal sqlstate '45000' set message_text = 'Winner is not a participant of this match.';
+    END IF;
 
 END //
 
 DELIMITER ;
 ```
+
+DB state før proceduren køres:
+
+![matches_table.png](creation%2Fmatches_table.png)
+
+```sql
+CALL submitMatchResult(2, 7);
+```
+
+DB state efter proceduren er kørt:
+
+![img.png](task3_filer/3.1.3_matchResult_valid.png)
+
+```sql
+CALL submitMatchResult(2, 3);
+```
+
+![img.png](task3_filer/3.1.3_matchResult_invalid.png)
+
 
 ### 3.2 Functions
 
@@ -428,6 +643,40 @@ begin
 end //
 DELIMITER ;
 ```
+
+#### Test foretaget baseret på følgende DB state:
+
+![matches_table.png](creation%2Fmatches_table.png)
+
+```sql
+SELECT getTotalWins(1);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.2.1_player1_test.png)
+
+Testen viser at spiller 1 har 1 win, som det også fremgår af matches tabellen.
+
+```sql
+SELECT getTotalWins(2);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.2.1_player2_test.png)
+
+Testen viser at spiller 2 har 0 wins, som det også fremgår af matches tabellen.
+
+```sql
+SELECT getTotalWins(5);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.2.1_player5_test.png)
+
+Denne test viser at spiller 5 har 0 wins, og har til hensigt at testen stadig giver at gyldigt resultat når der kommer forespørgsler på spillere som ikke har deltaget i nogle matches.
 
 ##### 3.2.2 getTournamentStatus(tournament_id)
 
@@ -458,6 +707,43 @@ END //
 DELIMITER ;
 ```
 
+#### Test foretaget baseret på følgende DB state (ekstra indsat match på tournament 6 for at kunne teste alle outcomes):
+
+Tournaments state:
+
+![tournaments_table.png](creation%2Ftournaments_table.png)
+
+Matches state:
+
+![img.png](task3_filer/3.2.2_matches_table.png)
+
+```sql
+SELECT getTournamentStatus(6);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.2.2_status6.png)
+
+```sql
+SELECT getTournamentStatus(7);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.2.2_status7.png)
+
+```sql
+SELECT getTournamentStatus(1);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.2.2_status1.png)
+
+Test foretaget d. 04-03-2025.
+Resultaterne matcher altså forventningerne, da turnering 6 og 7 ligger i fortiden, hvor turnering 6 stadig har en uafsluttet match, og turnering 1 ligger i fremtiden.
+
 ### 3.3 Triggers
 
 ##### 3.3.1 beforeInsertRegistration
@@ -484,25 +770,96 @@ end //
 DELIMITER ;
 ```
 
+DB state før triggeren køres:
+
+Tournaments state:
+
+![img.png](task3_filer/3.3.1_tournament_state.png)
+
+Registrations state:
+
+![tournament_registrations_table.png](creation%2Ftournament_registrations_table.png)
+
+```sql
+CALL joinTournament(1, 3);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.3.1_valid_registration.png)
+
+```sql
+CALL joinTournament(9, 1);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.3.1_invalid_registration.png)
+
 ##### 3.3.2 afterInsertMatch
 
 ```
 DELIMITER //
 create trigger afterInsertMatch
-after insert on matches
+after update on matches
 for each row
 begin
-
-    if new.winner_id = New.player1_id then
+    
+    DECLARE player1_ranking INT;
+    DECLARE player2_ranking INT;
+    
+    SELECT RANKING INTO player1_ranking FROM players WHERE player_id = new.player1_id;
+    SELECT RANKING INTO player2_ranking FROM players WHERE player_id = new.player2_id;
+    
+    if new.winner_id = new.player1_id then
 		update players set ranking = ranking + 10 where player_id = new.player1_id;
-        update players set ranking = ranking - 10 where player_id = new.player2_id;
-
+        if player2_ranking >= 10 then
+			update players set ranking = ranking - 10 where player_id = new.player2_id;
+		else
+			update players set ranking = 0 where player_id = new.player2_id;
+		end if;
 	elseif new.winner_id = new.player2_id then
 		update players set ranking = ranking + 10 where player_id = new.player2_id;
-        update players set ranking = ranking - 10 where player_id = new.player1_id;
-
+        if player1_ranking >= 10 then
+			update players set ranking = ranking - 10 where player_id = new.player1_id;
+		else
+			update players set ranking = 0 where player_id = new.player1_id;
+		end if;
     end if;
 end //
 
 DELIMITER ;
 ```
+
+DB state før triggeren køres:
+
+Players state:
+
+![players_table.png](creation%2Fplayers_table.png)
+
+Matches state:
+
+![matches_table.png](creation%2Fmatches_table.png)
+
+```sql
+CALL submitMatchResult(2, 1);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.3.2_playerloss_above_10.png)
+
+Testen her viser spiller 1 som har vundet er kommet op på 10 ranking, mens spiller 7 som tabte har mistet 10, og nu har en samlet ranking på 40.
+
+#### DB state sat tilbage til udgangspunktet før forrige test.
+
+```sql
+CALL submitMatchResult(4, 7);
+```
+
+Resultat:
+
+![img.png](task3_filer/3.3.2_playerloss_under_10.png)
+
+Denne test viser at hvis en spiller taber en match, og deres ranking er under 10, så vil deres ranking blive sat til 0.
+Spiller 7 får altså ranking, mens spiller 8 ikke kan miste mere, da rankingen allerede er 0.
