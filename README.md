@@ -863,3 +863,236 @@ Resultat:
 
 Denne test viser at hvis en spiller taber en match, og deres ranking er under 10, så vil deres ranking blive sat til 0.
 Spiller 7 får altså ranking, mens spiller 8 ikke kan miste mere, da rankingen allerede er 0.
+
+## Task 4: Brug af databasen fra en applikation
+
+Brug applikationen til at kalde stored procedures joinTournament og submitMatchResult.
+
+Udfør samme funktionalitet uden brug af stored procedures. 
+
+Forbindelsen til databasen oprettes via følgende dependency:
+
+```xml
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.33</version>
+</dependency>
+```
+
+### 4.1 joinTournament
+
+DB state før proceduren køres:
+
+![tournament_registrations_table.png](creation%2Ftournament_registrations_table.png)
+
+#### Udført med stored procedure:
+
+```java
+public static void joinTournament(int playerId, int tournamentId) {
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             CallableStatement stmt = conn.prepareCall("{CALL joinTournament(?, ?)}")) {
+
+            stmt.setInt(1, playerId);
+            stmt.setInt(2, tournamentId);
+            stmt.execute();
+
+            System.out.println("Player registered successfully.");
+        } catch (SQLException e) {
+            System.err.println("Database error: " + e.getMessage());
+        }
+    }
+```
+
+```java
+public static void main(String[] args) {
+    Procedures.joinTournament(1, 5);
+}
+```
+
+Resultat:
+
+![img.png](task4/4.1_valid_registration.png)
+
+![img.png](task4/4.1_java_terminal_valid_result.png)
+
+```java
+public static void main(String[] args) {
+    Procedures.joinTournament(1, 7);
+}
+```
+
+DB state sat tilbage til udgangspunktet for denne opgave.
+
+Resultat:
+
+![img.png](task4/4.1_invalid_registration.png)
+
+#### Udført uden stored procedure:
+
+```java
+    public static void joinTournamentPreparedStatement(int playerId, int tournamentId) {
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement checkStmt = conn.prepareStatement("SELECT 1 FROM tournament_registrations WHERE tournament_id = ? AND player_id = ?");
+             PreparedStatement insertStmt = conn.prepareStatement("INSERT INTO tournament_registrations (player_id, tournament_id, registered_at) VALUES (?, ?, NOW())")) {
+
+            // Check if player is already registered
+            checkStmt.setInt(1, tournamentId);
+            checkStmt.setInt(2, playerId);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) {
+                System.out.println("Player has already registered for the tournament.");
+                return;  // Stop execution if player is already registered
+            }
+
+            // Insert new registration
+            insertStmt.setInt(1, playerId);
+            insertStmt.setInt(2, tournamentId);
+            int rowsAffected = insertStmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Player registered successfully.");
+            } else {
+                System.out.println("Registration failed.");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Database error: " + e.getMessage());
+        }
+    }
+```
+
+```java
+public static void main(String[] args) {
+    Procedures.joinTournamentPreparedStatement(1, 7);
+}
+```
+
+Resultat:
+
+![img.png](task4/4.1_invalid_no_stored_procedure.png)
+
+Fejlhåndtering denne gang fra java siden, der modtages altså ikke en SQL exception.
+
+```java
+public static void main(String[] args) {
+    Procedures.joinTournamentPreparedStatement(3, 1);
+}
+```
+
+Resultat:
+
+![img.png](task4/4.1_no_stored_procedure_valid_java.png)
+
+![img.png](task4/4.1_no_stored_procedure_DB.png)
+
+### 4.2 submitMatchResult
+
+DB state før proceduren køres:
+
+![matches_table.png](creation%2Fmatches_table.png)
+
+#### Udført med stored procedure:
+
+```java
+public static void submitMatchResult(int match_id, int winner_id) {
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             CallableStatement stmt = conn.prepareCall("{CALL submitMatchResult(?, ?)}")) {
+
+            stmt.setInt(1, match_id);
+            stmt.setInt(2, winner_id);
+            stmt.execute();
+
+            System.out.println("Match result submitted successfully.");
+        } catch (SQLException e) {
+            System.err.println("Database error: " + e.getMessage());
+        }
+    }
+```
+
+```java
+public static void main(String[] args) {
+    Procedures.submitMatchResult(2, 7);
+}
+```
+
+Resultat:
+
+![img.png](task4/4.2_stored_procedure_java_valid.png)
+
+![img.png](task4/4.2_stored_procedure_db_valid.png)
+
+```java
+public static void main(String[] args) {
+    Procedures.submitMatchResult(2, 3);
+}
+```
+
+DB state sat tilbage til udgangspunktet for denne opgave.
+
+Resultat:
+
+![img.png](task4/4.2_stored_procedure_java_invalid.png)
+
+#### Udført uden stored procedure:
+
+```java
+    public static void submitMatchResultPreparedStatement(int match_id, int winner_id) {
+
+    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+         PreparedStatement playerids = conn.prepareStatement("SELECT player1_id, player2_id FROM matches WHERE match_id = ?");
+         PreparedStatement insertStmt = conn.prepareStatement("UPDATE matches SET winner_id = ? WHERE match_id = ?")) {
+
+        playerids.setInt(1, match_id);
+        ResultSet prs = playerids.executeQuery();
+        if (prs.next()){
+            int player1_id = prs.getInt("player1_id");
+            int player2_id = prs.getInt("player2_id");
+            if (winner_id != player1_id && winner_id != player2_id){
+                System.out.println("Winner id is not a player in the match");
+                return;
+            }
+        }
+
+
+
+        // Insert new registration
+        insertStmt.setInt(1, winner_id);
+        insertStmt.setInt(2, match_id);
+        int rowsAffected = insertStmt.executeUpdate();
+
+        if (rowsAffected > 0) {
+            System.out.println("Match result submitted.");
+        } else {
+            System.out.println("Match result failed while submitting.");
+        }
+
+    } catch (SQLException e) {
+        System.err.println("Database error: " + e.getMessage());
+    }
+}
+```
+
+```java
+public static void main(String[] args) {
+    Procedures.submitMatchResultPreparedStatement(4, 1);
+}
+```
+
+Resultat:
+
+![img.png](task4/4.2_no_stored_procedure_invalid_java.png)
+
+```java
+public static void main(String[] args) {
+    Procedures.submitMatchResultPreparedStatement(2, 1);
+}
+```
+
+![img.png](task4/4.2_no_stored_procedure_java_valid.png)
+
+![img.png](task4/4.2_no_stored_procedure_db_valid.png)
+
+## Task 5: Fordele og ulemper ved brugen af SQL programmering
