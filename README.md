@@ -76,27 +76,27 @@ DELIMITER $$
 
 CREATE TRIGGER set_created_at
 BEFORE INSERT ON players
-FOR EACH ROW
+FOR EACH ROW 
 BEGIN
     IF NEW.created_at IS NULL THEN
 		SET NEW.created_at = NOW();
 	END IF;
 END $$
 
-DELIMITER ;
+DELIMITER ; 
 
 DELIMITER $$
 
 CREATE TRIGGER set_created_at_tournaments
 BEFORE INSERT ON tournaments
-FOR EACH ROW
+FOR EACH ROW 
 BEGIN
     IF NEW.created_at IS NULL THEN
 		SET NEW.created_at = NOW();
 	END IF;
 END $$
 
-DELIMITER ;
+DELIMITER ; 
 
 DELIMITER //
 create trigger beforeInsertRegistration
@@ -123,13 +123,13 @@ create trigger afterInsertMatch
 after update on matches
 for each row
 begin
-
+    
     DECLARE player1_ranking INT;
     DECLARE player2_ranking INT;
-
+    
     SELECT RANKING INTO player1_ranking FROM players WHERE player_id = new.player1_id;
     SELECT RANKING INTO player2_ranking FROM players WHERE player_id = new.player2_id;
-
+    
     if new.winner_id = new.player1_id then
 		update players set ranking = ranking + 10 where player_id = new.player1_id;
         if player2_ranking >= 10 then
@@ -254,20 +254,20 @@ DELIMITER ;
 
 -- Test data:
 
-INSERT INTO esport.players(username, email, ranking)
-VALUES
-('maverick', 'm@test.dk', 0),
-('gobsmacked', 'g@test.dk', 100),
-('flume', 'f@test.dk', 200),
-('ranivorous', 'r@test.dk', 150),
-('phalange', 'p@test.dk', 2000),
-('sprout','s@test.dk', 175),
+INSERT INTO esport.players(username, email, ranking) 
+VALUES 
+('maverick', 'm@test.dk', 0), 
+('gobsmacked', 'g@test.dk', 100), 
+('flume', 'f@test.dk', 200), 
+('ranivorous', 'r@test.dk', 150), 
+('phalange', 'p@test.dk', 2000), 
+('sprout','s@test.dk', 175), 
 ('bulbous', 'b@test.dk', 50),
 ('drizzle', 'd@test.dk', 0),
 ('wharf', 'w@test.dk', 80),
 ('Jackster', 'j@test.dk', 1250);
 
-INSERT INTO esport.tournaments(name, game, max_players, start_date)
+INSERT INTO esport.tournaments(name, game, max_players, start_date) 
 VALUES
 ('Free Fire', 'CS', 100, '2025-03-10 12:00:00'),
 ('COBX Masters', 'LOL', 325, '2025-06-20 20:00:00'),
