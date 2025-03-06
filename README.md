@@ -3,6 +3,7 @@
 First OLA of Software development.
 
 ## TASK 1: Databasedesign og oprettel
+
 se af databasen
 
 ### Script til oprettelse af database:
@@ -75,27 +76,27 @@ DELIMITER $$
 
 CREATE TRIGGER set_created_at
 BEFORE INSERT ON players
-FOR EACH ROW 
+FOR EACH ROW
 BEGIN
     IF NEW.created_at IS NULL THEN
 		SET NEW.created_at = NOW();
 	END IF;
 END $$
 
-DELIMITER ; 
+DELIMITER ;
 
 DELIMITER $$
 
 CREATE TRIGGER set_created_at_tournaments
 BEFORE INSERT ON tournaments
-FOR EACH ROW 
+FOR EACH ROW
 BEGIN
     IF NEW.created_at IS NULL THEN
 		SET NEW.created_at = NOW();
 	END IF;
 END $$
 
-DELIMITER ; 
+DELIMITER ;
 
 DELIMITER //
 create trigger beforeInsertRegistration
@@ -122,13 +123,13 @@ create trigger afterInsertMatch
 after update on matches
 for each row
 begin
-    
+
     DECLARE player1_ranking INT;
     DECLARE player2_ranking INT;
-    
+
     SELECT RANKING INTO player1_ranking FROM players WHERE player_id = new.player1_id;
     SELECT RANKING INTO player2_ranking FROM players WHERE player_id = new.player2_id;
-    
+
     if new.winner_id = new.player1_id then
 		update players set ranking = ranking + 10 where player_id = new.player1_id;
         if player2_ranking >= 10 then
@@ -253,20 +254,20 @@ DELIMITER ;
 
 -- Test data:
 
-INSERT INTO esport.players(username, email, ranking) 
-VALUES 
-('maverick', 'm@test.dk', 0), 
-('gobsmacked', 'g@test.dk', 100), 
-('flume', 'f@test.dk', 200), 
-('ranivorous', 'r@test.dk', 150), 
-('phalange', 'p@test.dk', 2000), 
-('sprout','s@test.dk', 175), 
+INSERT INTO esport.players(username, email, ranking)
+VALUES
+('maverick', 'm@test.dk', 0),
+('gobsmacked', 'g@test.dk', 100),
+('flume', 'f@test.dk', 200),
+('ranivorous', 'r@test.dk', 150),
+('phalange', 'p@test.dk', 2000),
+('sprout','s@test.dk', 175),
 ('bulbous', 'b@test.dk', 50),
 ('drizzle', 'd@test.dk', 0),
 ('wharf', 'w@test.dk', 80),
 ('Jackster', 'j@test.dk', 1250);
 
-INSERT INTO esport.tournaments(name, game, max_players, start_date) 
+INSERT INTO esport.tournaments(name, game, max_players, start_date)
 VALUES
 ('Free Fire', 'CS', 100, '2025-03-10 12:00:00'),
 ('COBX Masters', 'LOL', 325, '2025-06-20 20:00:00'),
@@ -300,7 +301,7 @@ VALUES
 (1, 7, 8, '2025-03-10 14:00:00', null);
 ```
 
-### Sådan ser databasen ud efter creation scriptet er kørt: 
+### Sådan ser databasen ud efter creation scriptet er kørt:
 
 Players:
 
@@ -543,7 +544,7 @@ CREATE PROCEDURE joinTournament(
     IN p_tournament_id INT
 )
 BEGIN
-    IF EXISTS ( 
+    IF EXISTS (
 		SELECT 1
         FROM tournament_registrations
         WHERE tournament_id = p_tournament_id
@@ -622,7 +623,6 @@ CALL submitMatchResult(2, 3);
 ```
 
 ![img.png](task3_filer/3.1.3_matchResult_invalid.png)
-
 
 ### 3.2 Functions
 
@@ -804,13 +804,13 @@ create trigger afterInsertMatch
 after update on matches
 for each row
 begin
-    
+
     DECLARE player1_ranking INT;
     DECLARE player2_ranking INT;
-    
+
     SELECT RANKING INTO player1_ranking FROM players WHERE player_id = new.player1_id;
     SELECT RANKING INTO player2_ranking FROM players WHERE player_id = new.player2_id;
-    
+
     if new.winner_id = new.player1_id then
 		update players set ranking = ranking + 10 where player_id = new.player1_id;
         if player2_ranking >= 10 then
@@ -868,7 +868,7 @@ Spiller 7 får altså ranking, mens spiller 8 ikke kan miste mere, da rankingen 
 
 Brug applikationen til at kalde stored procedures joinTournament og submitMatchResult.
 
-Udfør samme funktionalitet uden brug af stored procedures. 
+Udfør samme funktionalitet uden brug af stored procedures.
 
 Forbindelsen til databasen oprettes via følgende dependency:
 
@@ -1096,3 +1096,19 @@ public static void main(String[] args) {
 ![img.png](task4/4.2_no_stored_procedure_db_valid.png)
 
 ## Task 5: Fordele og ulemper ved brugen af SQL programmering
+
+I følgende fil vil vi kort beskrive tankerne bag programmering i SQL og hvilke fordele og ulemper vi har oplevet.
+
+### Fordele
+
+SQL kan være super smart, hvis man bruger det korrekt og implementerer gode kodestykker.
+Det kan være nyttigt i firmaer, hvor man benytter mange forskellige platforme til den samme database, da man kan lave stored procedures og functions, der sikrer ensartet datahåndtering og behandling på tværs af systemer. Dette skaber en mere robust arkitektur, hvor logikken kan placeres direkte i databasen i stedet for i den enkelte applikation.
+Derudover kan SQL-forespørgsler være optimeret til at håndtere store mængder data hurtigt, især hvis man anvender korrekt indeksering og normalisering.
+
+### Ulemper
+
+SQL kan som sprog være et stort spring nedad ift. programmeringslogik, især for udviklere, da vi er vant til funktionelle eller objektorienterede sprog som Java eller C#. SQL, som er deklarativt, hvor man beskriver, hvad man vil have i stedet for at definere, hvordan det skal udføres, kan føles uintuitivt at arbejde med.
+
+Derudover kan stored procedures og triggers blive svære at debugge, da de ofte kører direkte i databasen og kan være mindre gennemsigtige end kode i et almindeligt programmeringssprog. Kompleks SQL-logik kan også gøre systemet mindre fleksibelt, hvis meget af forretningslogikken bliver låst fast i databasen i stedet for i applikationerne.
+
+Endelig kræver optimering af SQL-forespørgsler forståelse af indekser, joins og caching, hvilket kan være en udfordring for mindre erfarne udviklere. Hvis databasen ikke er designet korrekt fra starten, kan man hurtigt opleve performanceproblemer, især ved store datamængder.
